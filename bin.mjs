@@ -43,16 +43,42 @@ server.tool(
   'send-message',
   'send a message to a room',
   { roomId: z.string(), message: z.string() },
-  async ({ roomId, message }) =>  {
+  ({ roomId, message }) => new Promise(async (resolve, reject) => {
     const room = rooms[roomId]
     if (!room) {
       reject(`Room with id ${roomId} not found`)
+      return
     }
+    
+    // Set up a one-time message handler to capture the response
+    const messageHandler = (responseMessage) => {
+      if (!responseMessage.data) return
+      
+      // Remove this handler after receiving a message
+      room.off("message", messageHandler)
+      
+      // Store the message in the room's message history
+      messagesByRoom[roomId].push(responseMessage)
+      
+      // Resolve the promise with both the sent message and the response
+      resolve({
+        content: [{ 
+          type: 'text', 
+          text: `Message sent to room ${roomId}. Response received: ${responseMessage.data}` 
+        }]
+      })
+    }
+    
+    // Register the message handler
+    room.on("message", messageHandler)
+    
+    // Send the message
     await room.message(message)
-    return {
-      content: [{ type: 'text', text: `Message sent to room ${roomId}` }]
-    }
+    
+    // Add our sent message to the history
+    messagesByRoom[roomId].push({ data: message, sent: true })
   })
+)
 
 // // Add a dynamic greeting resource
 // server.resource(
