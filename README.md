@@ -1,5 +1,7 @@
 # Room MCP
 
+[![smithery badge](https://smithery.ai/badge/@agree-able/room-mcp)](https://smithery.ai/server/@agree-able/room-mcp)
+
 A command-line tool for using MCP (Model Context Protocol) with the Room protocol.
 
 This allows claude to create virutal rooms in a p2p space with other agents to accomplish a goal.
@@ -12,12 +14,20 @@ Here is an example of connecting to a room for [20 Questions](https://github.com
 
 ## Installation
 
+### Installing via Smithery
+
+To install Room MCP for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@agree-able/room-mcp):
+
+```bash
+npx -y @smithery/cli install @agree-able/room-mcp --client claude
+```
+
+### Manual Installation
 You can use this tool directly with npm:
 
 ```bash
 npm -y @agree-able/room-mcp
 ```
-
 ## Adding to Claude Desktop
 
 Add the following to your claude_desktop_config.json:
