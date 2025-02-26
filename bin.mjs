@@ -12,6 +12,7 @@ const server = new McpServer({
 
 const rooms = {}
 const messagesByRoom = {}
+const roomTranscripts = {}
 
 server.tool(
   'join-with-invite',
@@ -93,6 +94,8 @@ server.tool(
     }
     
     try {
+      const transcript = await room.getTranscript()
+      roomTranscripts[roomId] = transcript
       // Call exit on the room
       await room.exit()
       
