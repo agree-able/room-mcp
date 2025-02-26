@@ -134,6 +134,7 @@ server.tool(
         const transcriptPath = `${process.env.ROOM_TRANSCRIPTS_FOLDER}/${roomId}.json`
         fs.writeFileSync(transcriptPath, JSON.stringify(transcript, null, 2))
         console.log(`Transcript saved to ${transcriptPath}`)
+        delete roomTranscripts[roomId]
       }
       
       return {
@@ -152,16 +153,32 @@ server.resource(
   "final-room-transcript",
   new ResourceTemplate("rooms://{roomId}/transcript.json", { list: undefined }),
   async (uri, { roomId }) => {
-    if (!roomTranscripts[roomId]) {
+    if (roomTranscripts[roomId]) {
       return {
         contents: [{
           uri: uri.href,
-          text: JSON.stringify({ error: `Transcript for room ${roomId} not found` }),
-          type: "application/json"
+          text: JSON.stringify(roomTranscripts[roomId]),
+          mimeType: "application/json"
         }]
       }
     }
-    
+    // if there is a env.ROOM_TRANSCRIPTS_FOLDER, we should have saved the transcript
+    if (env.ROOM_TRANSCRIPTS_FOLDER) {
+      const transcriptPath = `${env.ROOM_TRANSCRIPTS_FOLDER}/${roomId}.json`
+      try {
+        const transcript = JSON.parse(fs.readFileSync(transcriptPath, 'utf8'))
+        return {
+          contents: [{
+            uri: uri.href,
+            text: JSON.stringify(transcript),
+            mimeType: "application/json"
+          }]
+        }
+      } catch (e) {
+        // ignore as we will return a not found response
+      }
+    }
+    // return a not found response
     return {
       contents: [{
         uri: uri.href,
