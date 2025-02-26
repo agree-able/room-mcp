@@ -3,6 +3,7 @@ import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { BreakoutRoom } from "@agree-able/room";
 import { z } from "zod";
+import fs from "fs";
 
 // Create an MCP server
 const server = new McpServer({
@@ -13,6 +14,11 @@ const server = new McpServer({
 const rooms = {}
 const messagesByRoom = {}
 const roomTranscripts = {}
+
+if (process.env.transcriptsFolder) {
+  // check if the folder exists, if not create it (with sycn)
+  fs.mkdirSync(process.env.transcriptsFolder, { recursive: true })
+}
 
 server.tool(
   'join-with-invite',
@@ -32,7 +38,8 @@ server.tool(
         content: [{ type: 'text', text: response }]
       })
     })
-    room.on("peerLeft", (key) => {
+    room.on("peerLeft", () => {
+      room.peerLeft = true
     });
     const roomInfo = room.getRoomInfo()
     rooms[roomInfo.roomId] = room
@@ -46,9 +53,25 @@ server.tool(
   { roomId: z.string(), message: z.string() },
   ({ roomId, message }) => new Promise(async (resolve, reject) => {
     const room = rooms[roomId]
-    if (!room) {
+    if (!room) {s
       reject(`Room with id ${roomId} not found`)
       return
+    }
+    if (roomTranscripts[roomId]) {
+      return resolve({
+        content: [{ 
+          type: 'text', 
+          text: `room ${roomId} is closed. A transcript is available at rooms://${roomId}/transcript.json`
+        }]
+      })
+    }
+    if (room.peerLeft) {
+      return resolve({
+        content: [{ 
+          type: 'text', 
+          text: `the other party left the room ${roomId}. The room should be exited.`
+        }]
+      })
     }
     
     // Set up a one-time message handler to capture the response
@@ -102,9 +125,15 @@ server.tool(
       // Clean up resources
       delete rooms[roomId]
       delete messagesByRoom[roomId]
+
+      // if there is a transcriptsFolder, save the transcript
+      if (process.env.transcriptsFolder) {
+        const transcriptPath = `${process.env.transcriptsFolder}/${roomId}.json`
+        fs.writeFileSync(transcriptPath, JSON.stringify(transcript, null, 2))
+      }
       
       return {
-        content: [{ type: 'text', text: `Successfully exited room ${roomId} and cleaned up resources` }]
+        content: [{ type: 'text', text: `Successfully exited room ${roomId} and cleaned up resources. A transcript is available at rooms://${roomId}/transcript.json` }]
       }
     } catch (error) {
       return {
@@ -133,7 +162,7 @@ server.resource(
       contents: [{
         uri: uri.href,
         text: JSON.stringify(roomTranscripts[roomId]),
-        type: "application/json"
+        mimeType: "application/json"
       }]
     }
   }
