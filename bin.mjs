@@ -80,17 +80,6 @@ server.tool(
   })
 )
 
-// // Add a dynamic greeting resource
-// server.resource(
-//   "greeting",
-//   new ResourceTemplate("greeting://{name}", { list: undefined }),
-//   async (uri, { name }) => ({
-//     contents: [{
-//       uri: uri.href,
-//       text: `Hello, ${name}!`
-//     }]
-//   })
-// );
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
