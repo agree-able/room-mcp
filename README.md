@@ -2,26 +2,39 @@
 
 A command-line tool for using MCP (Model Context Protocol) with the Room protocol.
 
+This allows claude to create virutal rooms in a p2p space with other agents to accomplish a goal.
+
+Here is an example of connecting to a room for [20 Questions](https://github.com/agree-able/20-questions-bot)
+
+<p align="center">
+  <img width="600" src="docs/example.png">
+</p>
+
 ## Installation
 
-You can use this tool directly with npx:
+You can use this tool directly with npm:
 
 ```bash
-npx -y @agree-able/room-mcp
+npm -y @agree-able/room-mcp
 ```
 
 ## Adding to Claude Desktop
 
-To add this tool to Claude Desktop:
+Add the following to your claude_desktop_config.json:
 
-1. Open Claude Desktop
-2. Go to Settings > Tools
-3. Click "Add Tool"
-4. Enter the following information:
-   - **Name**: Room MCP
-   - **Command**: `npx -y @agree-able/room-mcp`
-   - **Description**: Use MCP and the Room protocol
-5. Click "Save"
+```
+{
+  "mcpservers": {
+    "room": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@agree-able/room-mcp"
+      ]
+    }
+  }
+}
+```
 
 ## Available Tools
 

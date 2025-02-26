@@ -1,0 +1,32 @@
+{
+  "name": "@agree-able/room-mcp",
+  "version": "1.0.0",
+  "description": "Use MCP and the room protocol",
+  "main": "bin.mjs",
+  "bin": {
+    "room-mcp": "./bin.mjs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agree-able/room-mcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "room",
+    "protocol"
+  ],
+  "author": "Ryan Ramage",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/agree-able/room-mcp/issues"
+  },
+  "homepage": "https://github.com/agree-able/room-mcp#readme",
+  "dependencies": {
+    "@agree-able/invite": "^1.0.4",
+    "@agree-able/room": "^4.2.0",
+    "@modelcontextprotocol/sdk": "^1.6.0"
+  }
+}
