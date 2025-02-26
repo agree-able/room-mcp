@@ -5,9 +5,21 @@ startCommand:
   configSchema:
     # JSON Schema defining the configuration options for the MCP.
     type: object
-    properties: {}
+    properties:
+      roomTranscriptsFolder:
+        type: string
+        description: "If set, room conversation transcripts will be saved as JSON files in this folder when a room is exited"
   commandFunction:
     # A function that produces the CLI command to start the MCP on stdio.
     |-
-    (config) => ({ command: 'node', args: ['./bin.mjs'], env: process.env })
-  exampleConfig: {}
+    (config) => ({ 
+      command: 'node', 
+      args: ['./bin.mjs'], 
+      env: {
+        ...process.env,
+        ROOM_TRANSCRIPTS_FOLDER: config.roomTranscriptsFolder
+      }
+    })
+  exampleConfig: {
+    roomTranscriptsFolder: "/path/to/transcripts"
+  }

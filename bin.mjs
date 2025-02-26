@@ -15,8 +15,11 @@ const rooms = {}
 const messagesByRoom = {}
 const roomTranscripts = {}
 
+// If ROOM_TRANSCRIPTS_FOLDER is set, ensure the directory exists
+// When this env var is set, room conversation transcripts will be saved as JSON files
+// in this folder when a room is exited
 if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
-  // check if the folder exists, if not create it (with sycn)
+  // Check if the folder exists, if not create it (with sync)
   fs.mkdirSync(process.env.ROOM_TRANSCRIPTS_FOLDER, { recursive: true })
 }
 
@@ -126,10 +129,11 @@ server.tool(
       delete rooms[roomId]
       delete messagesByRoom[roomId]
 
-      // if there is a transcriptsFolder, save the transcript
+      // If ROOM_TRANSCRIPTS_FOLDER is set, save the transcript as a JSON file
       if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
         const transcriptPath = `${process.env.ROOM_TRANSCRIPTS_FOLDER}/${roomId}.json`
         fs.writeFileSync(transcriptPath, JSON.stringify(transcript, null, 2))
+        console.log(`Transcript saved to ${transcriptPath}`)
       }
       
       return {

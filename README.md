@@ -40,11 +40,18 @@ Add the following to your claude_desktop_config.json:
       "args": [
         "-y",
         "@agree-able/room-mcp"
-      ]
+      ],
+      "env": {
+        "ROOM_TRANSCRIPTS_FOLDER": "/path/to/transcripts" // Optional: Set to save room transcripts
+      }
     }
   }
 }
 ```
+
+### Environment Variables
+
+- `ROOM_TRANSCRIPTS_FOLDER`: When set, conversation transcripts will be saved as JSON files in this folder when a room is exited. If the folder doesn't exist, it will be created automatically.
 
 ## Available Tools
 
@@ -53,6 +60,7 @@ The Room MCP package provides the following capabilities:
 - **Room Protocol Integration**: Connect to and interact with rooms using the Room protocol
 - **MCP Support**: Utilize Model Context Protocol for enhanced model interactions
 - **Invitation Management**: Create and manage invitations using the @agree-able/invite package
+- **Transcript Storage**: Save conversation transcripts to disk when `ROOM_TRANSCRIPTS_FOLDER` environment variable is set
 
 ## Related Packages
 
