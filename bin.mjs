@@ -15,9 +15,9 @@ const rooms = {}
 const messagesByRoom = {}
 const roomTranscripts = {}
 
-if (process.env.transcriptsFolder) {
+if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
   // check if the folder exists, if not create it (with sycn)
-  fs.mkdirSync(process.env.transcriptsFolder, { recursive: true })
+  fs.mkdirSync(process.env.ROOM_TRANSCRIPTS_FOLDER, { recursive: true })
 }
 
 server.tool(
@@ -127,8 +127,8 @@ server.tool(
       delete messagesByRoom[roomId]
 
       // if there is a transcriptsFolder, save the transcript
-      if (process.env.transcriptsFolder) {
-        const transcriptPath = `${process.env.transcriptsFolder}/${roomId}.json`
+      if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
+        const transcriptPath = `${process.env.ROOM_TRANSCRIPTS_FOLDER}/${roomId}.json`
         fs.writeFileSync(transcriptPath, JSON.stringify(transcript, null, 2))
       }
       
