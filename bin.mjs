@@ -56,7 +56,7 @@ server.tool(
   { roomId: z.string(), message: z.string() },
   ({ roomId, message }) => new Promise(async (resolve, reject) => {
     const room = rooms[roomId]
-    if (!room) {s
+    if (!room) {
       reject(`Room with id ${roomId} not found`)
       return
     }
