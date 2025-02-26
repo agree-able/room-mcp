@@ -80,6 +80,37 @@ server.tool(
   })
 )
 
+server.tool(
+  'exit-room',
+  'exit a room and clean up resources',
+  { roomId: z.string() },
+  async ({ roomId }) => {
+    const room = rooms[roomId]
+    if (!room) {
+      return {
+        content: [{ type: 'text', text: `Room with id ${roomId} not found` }]
+      }
+    }
+    
+    try {
+      // Call exit on the room
+      await room.exit()
+      
+      // Clean up resources
+      delete rooms[roomId]
+      delete messagesByRoom[roomId]
+      
+      return {
+        content: [{ type: 'text', text: `Successfully exited room ${roomId} and cleaned up resources` }]
+      }
+    } catch (error) {
+      return {
+        content: [{ type: 'text', text: `Error exiting room ${roomId}: ${error.message}` }]
+      }
+    }
+  }
+)
+
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
