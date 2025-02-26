@@ -114,6 +114,31 @@ server.tool(
   }
 )
 
+// Dynamic resource to retrieve the transcript of a finished chat
+server.resource(
+  "final-room-transcript",
+  new ResourceTemplate("rooms://{roomId}/transcript.json", { list: undefined }),
+  async (uri, { roomId }) => {
+    if (!roomTranscripts[roomId]) {
+      return {
+        contents: [{
+          uri: uri.href,
+          text: JSON.stringify({ error: `Transcript for room ${roomId} not found` }),
+          type: "application/json"
+        }]
+      }
+    }
+    
+    return {
+      contents: [{
+        uri: uri.href,
+        text: JSON.stringify(roomTranscripts[roomId]),
+        type: "application/json"
+      }]
+    }
+  }
+);
+
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
