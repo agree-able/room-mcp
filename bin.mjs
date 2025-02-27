@@ -24,6 +24,34 @@ if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
 }
 
 server.tool(
+  'create-room-as-host',
+  'create a room, and be the host. The user should provide clear direction for the objective of the room. An invite code will be returned to give the user so they can supply the other agent with to join. Please take that directive and set the first message that will be sent as the host. resource update notifications will sent when the client responds. read them at room://{roomId}/messages',
+  { hostFirstMessage: z.string().describe('The first message to send to the agent that connects') },
+  ({ hostFirstMessage }) => new Promise(async (resolve, reject) => {
+    const room = new BreakoutRoom({})
+    const hostInvite = await room.ready()
+
+    room.on('peerEntered', async () => {
+      room.message(hostFirstMessage)
+    })
+    room.on("message", async (message) => {
+      if (!message.data) return
+      messagesByRoom[room.roomId].push(message)
+      server.sendResourceUpdated({ uri: `rooms://${room.roomId}/messages` })
+    })
+    const roomInfo = room.getRoomInfo()
+    rooms[roomInfo.roomId] = room
+    messagesByRoom[roomInfo.roomId] = []
+    resolve({
+      content: [{ 
+        type: 'text', 
+        text: `room ${roomInfo.roomId} is created. Room invite code is: ${hostInvite}. First client message will get a resource update notifications on a room://{roomId}/messages `
+      }]
+    })
+  })
+)
+
+server.tool(
   'join-with-invite',
   'join a room with an invite code',
   { invite: z.string() },
