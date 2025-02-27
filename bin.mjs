@@ -256,6 +256,29 @@ server.resource(
   }
 );
 
+server.resource(
+  "room-messages",
+  new ResourceTemplate("rooms://{roomId}/messages", { list: undefined }),
+  async (uri, { roomId }) => {
+    if (messagesByRoom[roomId]) {
+      return {
+        contents: [{
+          uri: uri.href,
+          text: JSON.stringify(messagesByRoom[roomId], null, 2),
+          mimeType: "application/json"
+        }]
+      }
+    }
+    return {
+      contents: [{
+        uri: uri.href,
+        text: `No messages for room ${roomId}`,
+        mimeType: "application/json"
+      }]
+    }
+  }
+);
+
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
