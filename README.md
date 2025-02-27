@@ -37,11 +37,13 @@ npm -y @agree-able/room-mcp
 ```
 ## Adding to Claude Desktop
 
+See https://modelcontextprotocol.io/quickstart/user for more details.
+
 Add the following to your claude_desktop_config.json:
 
 ```
 {
-  "mcpservers": {
+  "mcpServers": {
     "room": {
       "command": "npx",
       "args": [

@@ -25,7 +25,7 @@ if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
 
 server.tool(
   'create-room-as-host',
-  'create a room, and be the host. The user should provide clear direction for the objective of the room. An invite code will be returned to give the user so they can supply the other agent with to join. Please take that directive and set the first message that will be sent as the host. resource update notifications will sent when the client responds. read them at room://{roomId}/messages',
+  'create a room, and be the host. The user should provide clear direction for the objective of the room. Please take the user directive and set the first message that will be sent as the host. resource update notifications will sent when the client responds. read them at room://{roomId}/messages. An invite code will be returned, and must be given the user so they can supply the other agent with it to join.',
   { hostFirstMessage: z.string().describe('The first message to send to the agent that connects') },
   ({ hostFirstMessage }) => new Promise(async (resolve, reject) => {
     const room = new BreakoutRoom({})
@@ -37,7 +37,8 @@ server.tool(
     room.on("message", async (message) => {
       if (!message.data) return
       messagesByRoom[room.roomId].push(message)
-      server.sendResourceUpdated({ uri: `rooms://${room.roomId}/messages` })
+      console.error('sending resource updated')
+      server.server.sendResourceUpdated({ uri: `rooms://${room.roomId}/messages` })
     })
     const roomInfo = room.getRoomInfo()
     rooms[roomInfo.roomId] = room
@@ -45,7 +46,7 @@ server.tool(
     resolve({
       content: [{ 
         type: 'text', 
-        text: `room ${roomInfo.roomId} is created. Room invite code is: ${hostInvite}. First client message will get a resource update notifications on a room://{roomId}/messages `
+        text: `room ${roomInfo.roomId} is created. Room invite code is: ${hostInvite} (dont try to join that. its only for the other participant). To see the response to the hostFirstMessage, listen for notifications on room://{roomId}/messages and then get the active-room-messages`
       }]
     })
   })
@@ -193,8 +194,8 @@ server.resource(
       }
     }
     // if there is a env.ROOM_TRANSCRIPTS_FOLDER, we should have saved the transcript
-    if (env.ROOM_TRANSCRIPTS_FOLDER) {
-      const transcriptPath = `${env.ROOM_TRANSCRIPTS_FOLDER}/${roomId}.json`
+    if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
+      const transcriptPath = `${process.env.ROOM_TRANSCRIPTS_FOLDER}/${roomId}.json`
       try {
         const transcript = JSON.parse(fs.readFileSync(transcriptPath, 'utf8'))
         return {
@@ -205,7 +206,7 @@ server.resource(
           }]
         }
       } catch (e) {
-        console.error(`Error reading transcript file: ${e}`)
+        // console.error(`Error reading transcript file: ${e}`)
       }
     }
     // return a not found response
@@ -257,7 +258,7 @@ server.resource(
 );
 
 server.resource(
-  "room-messages",
+  "active-room-messages",
   new ResourceTemplate("rooms://{roomId}/messages", { list: undefined }),
   async (uri, { roomId }) => {
     if (messagesByRoom[roomId]) {
