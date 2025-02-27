@@ -25,7 +25,7 @@ if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
 
 server.tool(
   'create-room-as-host',
-  'create a room, and be the host. The user should provide clear direction for the objective of the room. Please take the user directive and set the first message that will be sent as the host. resource update notifications will sent when the client responds. read them at room://{roomId}/messages. An invite code will be returned, and must be given the user so they can supply the other agent with it to join.',
+  'create a room, and be the host. The user should provide clear direction for the objective of the room. Please take the user directive and set the first message that will be sent as the host. resource update notifications will sent when the client responds. read them at rooms://room/{roomId}/messages. An invite code will be returned, and must be given the user so they can supply the other agent with it to join.',
   { hostFirstMessage: z.string().describe('The first message to send to the agent that connects') },
   ({ hostFirstMessage }) => new Promise(async (resolve, reject) => {
     const room = new BreakoutRoom({})
@@ -38,7 +38,11 @@ server.tool(
       if (!message.data) return
       messagesByRoom[room.roomId].push(message)
       console.error('sending resource updated')
-      server.server.sendResourceUpdated({ uri: `rooms://${room.roomId}/messages` })
+      await server.server.sendResourceUpdated({
+        name: `${room.roomId}-messages`,
+        uri: `rooms://room/${room.roomId}/messages` 
+      })
+      console.error('done sending')
     })
     const roomInfo = room.getRoomInfo()
     rooms[roomInfo.roomId] = room
@@ -46,7 +50,7 @@ server.tool(
     resolve({
       content: [{ 
         type: 'text', 
-        text: `room ${roomInfo.roomId} is created. Room invite code is: ${hostInvite} (dont try to join that. its only for the other participant). To see the response to the hostFirstMessage, listen for notifications on room://{roomId}/messages and then get the active-room-messages`
+        text: `room ${roomInfo.roomId} is created. Room invite code is: ${hostInvite} (dont try to join that. its only for the other participant). To see the response to the hostFirstMessage, listen for notifications on rooms://room/{roomId}/messages and then get the active-room-messages`
       }]
     })
   })
@@ -85,6 +89,7 @@ server.tool(
   'send-message',
   'send a message to a room',
   { roomId: z.string(), message: z.string() },
+
   ({ roomId, message }) => new Promise(async (resolve, reject) => {
     const room = rooms[roomId]
     if (!room) {
@@ -95,7 +100,7 @@ server.tool(
       return resolve({
         content: [{ 
           type: 'text', 
-          text: `room ${roomId} is closed. A transcript is available at rooms://${roomId}/transcript.json`
+          text: `room ${roomId} is closed. A transcript is available at rooms://room/${roomId}/transcript.json`
         }]
       })
     }
@@ -169,7 +174,7 @@ server.tool(
       }
       
       return {
-        content: [{ type: 'text', text: `Successfully exited room ${roomId} and cleaned up resources. A transcript is available at rooms://${roomId}/transcript.json` }]
+        content: [{ type: 'text', text: `Successfully exited room ${roomId} and cleaned up resources. A transcript is available at rooms://room/${roomId}/transcript.json` }]
       }
     } catch (error) {
       return {
@@ -182,7 +187,7 @@ server.tool(
 // Dynamic resource to retrieve the transcript of a finished chat
 server.resource(
   "final-room-transcript",
-  new ResourceTemplate("rooms://{roomId}/transcript.json", { list: undefined }),
+  new ResourceTemplate("rooms://room/{roomId}/transcript.json", { list: undefined }),
   async (uri, { roomId }) => {
     if (roomTranscripts[roomId]) {
       return {
@@ -245,7 +250,7 @@ Consultation & Escalation
 
 server.resource(
   "room-directive",
-  new ResourceTemplate("rooms://{roomId}/directive.txt", { list: undefined }),
+  new ResourceTemplate("rooms://room/{roomId}/directive.txt", { list: undefined }),
   async (uri, { }) => {
     return {
       contents: [{
@@ -257,9 +262,23 @@ server.resource(
   }
 );
 
+const roomMessagesList = async (extra) => {
+  console.error('extra:', extra)
+  const roomIds = Object.keys(rooms)
+  const resources = roomIds.map(roomId => {
+    return {
+      name: `${roomId}-messages`,
+      uri: `rooms://room/${roomId}/messages`,
+      mimeType: "application/json"
+    }
+  })
+  console.error('contents:', resources)
+  return { resources }
+}
+
 server.resource(
   "active-room-messages",
-  new ResourceTemplate("rooms://{roomId}/messages", { list: undefined }),
+  new ResourceTemplate("rooms://room/{roomId}/messages", { list: roomMessagesList }),
   async (uri, { roomId }) => {
     if (messagesByRoom[roomId]) {
       return {
@@ -277,6 +296,22 @@ server.resource(
         mimeType: "application/json"
       }]
     }
+  }
+);
+
+// Static resource
+server.resource(
+  "rooms",
+  "rooms://room",
+  async (uri) => {
+    const roomIds = Object.keys(rooms)
+    const currentRoomMessages = ( !roomIds.length ) ? null : Object.keys(rooms).map(roomId => `rooms://room/${roomId}/messages`).join('\n')
+    return ({
+      contents: [{
+        uri: uri.href,
+        text: `current room messages ${currentRoomMessages}`
+      }]
+    })
   }
 );
 
