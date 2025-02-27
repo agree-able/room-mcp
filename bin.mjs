@@ -25,69 +25,101 @@ if (process.env.ROOM_TRANSCRIPTS_FOLDER) {
 
 server.tool(
   'create-room-as-host',
-  'create a room, and be the host. The user should provide clear direction for the objective of the room. Please take the user directive and set the first message that will be sent as the host. resource update notifications will sent when the client responds. read them at rooms://room/{roomId}/messages. An invite code will be returned, and must be given the user so they can supply the other agent with it to join.',
-  { hostFirstMessage: z.string().describe('The first message to send to the agent that connects') },
-  ({ hostFirstMessage }) => new Promise(async (resolve, reject) => {
+  `create a room, and be the host. 
+The user should provide clear direction for the objective of the room. 
+Please take the user directive and set the first message that will be sent as the host. 
+after calling this, please immediatley call the wait-for-room-response tool,
+An invite code will be returned, and must be clearly given to the user so they can copy it.`,
+  { hostFirstMessage: z.string().describe('The first message to send when the peer connects to the room') },
+  async ({ hostFirstMessage }) => {
     const room = new BreakoutRoom({})
     const hostInvite = await room.ready()
-
     room.on('peerEntered', async () => {
       room.message(hostFirstMessage)
-    })
-    room.on("message", async (message) => {
-      if (!message.data) return
-      messagesByRoom[room.roomId].push(message)
-      console.error('sending resource updated')
-      await server.server.sendResourceUpdated({
-        name: `${room.roomId}-messages`,
-        uri: `rooms://room/${room.roomId}/messages` 
-      })
-      console.error('done sending')
     })
     const roomInfo = room.getRoomInfo()
     rooms[roomInfo.roomId] = room
     messagesByRoom[roomInfo.roomId] = []
-    resolve({
+    return {
       content: [{ 
         type: 'text', 
-        text: `room ${roomInfo.roomId} is created. Room invite code is: ${hostInvite} (dont try to join that. its only for the other participant). To see the response to the hostFirstMessage, listen for notifications on rooms://room/{roomId}/messages and then get the active-room-messages`
+        text: `room ${roomInfo.roomId} is created. 
+Room invite code is: ${hostInvite} (dont try to join that. its only for the other participant). 
+Please give the room invite code back to the user in a clear field they can copy.
+The first message to the peer will be sent when they join the room
+Please call wait-for-room-response next to see the first message
+Before responding, please consult the directive at rooms://${roomInfo.roomId}/directive.txt
+`
       }]
-    })
-  })
+    }
+  }
 )
 
 server.tool(
   'join-with-invite',
   'join a room with an invite code',
   { invite: z.string() },
-  ({ invite }) => new Promise(async (resolve, reject) => {
+  async ({ invite }) => { 
     const room = new BreakoutRoom({ invite })
     await room.ready()
-    room.on("message", async (message) => {
-      if (!message.data) return
-      messagesByRoom[room.roomId].push(message)
-      // if this is not the first message, just return
-      if (messagesByRoom[room.roomId].length > 1) return
-      // otherwise lets resolve the promise with the message
-      let response = `Room created with id: ${roomInfo.roomId}. 
-Before responding, please consult the directive at rooms://${roomInfo.roomId}/directive.txt 
-Host's first message to us is: ${message.data}`
-      resolve({
-        content: [{ type: 'text', text: response }]
-      })
-    })
-    room.on("peerLeft", () => {
-      room.peerLeft = true
-    });
     const roomInfo = room.getRoomInfo()
     rooms[roomInfo.roomId] = room
     messagesByRoom[roomInfo.roomId] = []
-  })
+    await server.server.sendResourceUpdated({
+      name: `${room.roomId}-messages`,
+      uri: `rooms://room/${room.roomId}/messages` 
+    })
+    let response = `Room created with id: ${roomInfo.roomId}. 
+The room host should always send the first message. 
+Please call wait-for-room-response next to see the host's first message
+Before responding, please consult the directive at rooms://${roomInfo.roomId}/directive.txt
+`
+    return {
+      content: [{ type: 'text', text: response }]
+    }
+  }
 );
 
 server.tool(
+  'wait-for-room-response',
+  'wait for a message to arrive in the room, of be notified if the other party left',
+  { roomId: z.string() },
+  ({ roomId }) => new Promise(async (resolve, reject) => {
+    const room = rooms[roomId]
+    if (!room) {
+      reject(`Room with id ${roomId} not found`)
+      return
+    }
+    const messageHandler = (responseMessage) => {
+      if (!responseMessage.data) return
+      room.off("message", messageHandler)
+      messagesByRoom[roomId].push(responseMessage)
+      resolve({
+        content: [{ 
+          type: 'text', 
+          text: `Message received in room ${roomId}. Message: ${responseMessage.data}` 
+        }]
+      })
+    }
+    room.on("message", messageHandler)
+    
+    const peerLeftHandler = () => {
+      room.off("peerLeft", peerLeftHandler)
+      room.peerLeft = true
+      resolve({
+        content: [{ 
+          type: 'text', 
+          text: `Peer left room ${roomId}. The room can now be safely exited` 
+        }]
+      })
+    }
+    room.on("peerLeft", peerLeftHandler)
+  })
+)
+
+server.tool(
   'send-message',
-  'send a message to a room',
+  'send a message to a room. this call will automatically wait for the response, or inform if the peer has left',
   { roomId: z.string(), message: z.string() },
 
   ({ roomId, message }) => new Promise(async (resolve, reject) => {
@@ -113,17 +145,10 @@ server.tool(
       })
     }
     
-    // Set up a one-time message handler to capture the response
     const messageHandler = (responseMessage) => {
       if (!responseMessage.data) return
-      
-      // Remove this handler after receiving a message
       room.off("message", messageHandler)
-      
-      // Store the message in the room's message history
       messagesByRoom[roomId].push(responseMessage)
-      
-      // Resolve the promise with both the sent message and the response
       resolve({
         content: [{ 
           type: 'text', 
@@ -131,14 +156,19 @@ server.tool(
         }]
       })
     }
-    
-    // Register the message handler
     room.on("message", messageHandler)
-    
-    // Send the message
+    const peerLeftHandler = () => {
+      room.off("peerLeft", peerLeftHandler)
+      room.peerLeft = true
+      resolve({
+        content: [{ 
+          type: 'text', 
+          text: `Peer left room ${roomId}. The room can now be safely exited` 
+        }]
+      })
+    }
+    room.on("peerLeft", peerLeftHandler)
     await room.message(message)
-    
-    // Add our sent message to the history
     messagesByRoom[roomId].push({ data: message, sent: true })
   })
 )
