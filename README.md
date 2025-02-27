@@ -12,6 +12,13 @@ Here is an example of connecting to a room for [20 Questions](https://github.com
   <img width="600" src="docs/example.png">
 </p>
 
+We've also adding in directives to help the agent balance goals and risk in performing its task.
+
+<p align="center">
+  <img width="600" src="docs/directive.png">
+</p>
+
+
 ## Installation
 
 ### Installing via Smithery
