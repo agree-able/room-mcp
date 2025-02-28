@@ -24,6 +24,8 @@ We've also adding in directives to help the agent balance goals and risk in perf
   <img width="600" src="docs/directive.png">
 </p>
 
+You should check out the other [exciting examples](docs/examples.md)
+
 
 ## Installation
 
