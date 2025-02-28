@@ -116,13 +116,16 @@ server.tool(
       name: `${room.roomId}-messages`,
       uri: `rooms://room/${room.roomId}/messages` 
     })
-    let response = `Room created with id: ${roomInfo.roomId}. 
+    
+    // Set up initial response message
+    const initialMessage = `Room created with id: ${roomInfo.roomId}. 
 The room host should always send the first message. 
 Please call wait-for-room-response next to see the host's first message
-Before responding, please consult the directive at rooms://${roomInfo.roomId}/directive.txt
-`
+Before responding, please consult the directive at rooms://${roomInfo.roomId}/directive.txt`;
+    
+    // Return the initial response and wait for the first message
     return {
-      content: [{ type: 'text', text: response }]
+      content: [{ type: 'text', text: initialMessage }]
     }
   }
 );
