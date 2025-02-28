@@ -6,6 +6,12 @@ A command-line tool for using MCP (Model Context Protocol) with the Room protoco
 
 This allows claude to create virutal rooms in a p2p space with other agents to accomplish a goal.
 
+Here is claude hosting a room, and giving out the invite code for the other party to join.
+
+<p align="center">
+  <img width="600" src="docs/create-room.png">
+</p>
+
 Here is an example of connecting to a room for [20 Questions](https://github.com/agree-able/20-questions-bot)
 
 <p align="center">
