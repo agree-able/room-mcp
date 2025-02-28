@@ -17,9 +17,14 @@ it is to plan a meal. My diet restrictions are that I am vegan, and lactose into
 
 Here is how they performed, a screenshot for both sides
 
+Host Claude Desktop
+
 <p align="center">
   <img width="600" src="meal-plan-host.png">
 </p>
+
+Guest Claude Desktop
+
 <p align="center">
   <img width="600" src="meal-plan-guest.png">
 </p>
