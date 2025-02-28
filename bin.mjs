@@ -15,6 +15,53 @@ const rooms = {}
 const messagesByRoom = {}
 const roomTranscripts = {}
 
+/**
+ * Creates a promise that resolves when a message is received or peer leaves
+ * @param {Object} room - The room object
+ * @param {string} roomId - The room ID
+ * @param {boolean} sentMessage - Whether a message was sent (to add to transcript)
+ * @param {string} [message] - The message that was sent (if any)
+ * @returns {Promise} - Resolves with a response object
+ */
+function waitForResponseOrPeerLeft(room, roomId, sentMessage = false, message = null) {
+  return new Promise((resolve) => {
+    // If we sent a message, add it to the transcript
+    if (sentMessage && message) {
+      messagesByRoom[roomId].push({ data: message, sent: true });
+    }
+    
+    // Handle incoming messages
+    const messageHandler = (responseMessage) => {
+      if (!responseMessage.data) return;
+      room.off("message", messageHandler);
+      room.off("peerLeft", peerLeftHandler);
+      messagesByRoom[roomId].push(responseMessage);
+      resolve({
+        content: [{ 
+          type: 'text', 
+          text: `Message ${sentMessage ? 'sent to' : 'received in'} room ${roomId}. ${sentMessage ? 'Response received' : 'Message'}: ${responseMessage.data}` 
+        }]
+      });
+    };
+    
+    // Handle peer leaving
+    const peerLeftHandler = () => {
+      room.off("message", messageHandler);
+      room.off("peerLeft", peerLeftHandler);
+      room.peerLeft = true;
+      resolve({
+        content: [{ 
+          type: 'text', 
+          text: `Peer left room ${roomId}. The room can now be safely exited` 
+        }]
+      });
+    };
+    
+    room.on("message", messageHandler);
+    room.on("peerLeft", peerLeftHandler);
+  });
+}
+
 // If ROOM_TRANSCRIPTS_FOLDER is set, ensure the directory exists
 // When this env var is set, room conversation transcripts will be saved as JSON files
 // in this folder when a room is exited
@@ -84,93 +131,49 @@ server.tool(
   'wait-for-room-response',
   'wait for a message to arrive in the room, of be notified if the other party left',
   { roomId: z.string() },
-  ({ roomId }) => new Promise(async (resolve, reject) => {
+  async ({ roomId }) => {
     const room = rooms[roomId]
     if (!room) {
-      reject(`Room with id ${roomId} not found`)
-      return
+      throw new Error(`Room with id ${roomId} not found`)
     }
-    const messageHandler = (responseMessage) => {
-      if (!responseMessage.data) return
-      room.off("message", messageHandler)
-      messagesByRoom[roomId].push(responseMessage)
-      resolve({
-        content: [{ 
-          type: 'text', 
-          text: `Message received in room ${roomId}. Message: ${responseMessage.data}` 
-        }]
-      })
-    }
-    room.on("message", messageHandler)
-    
-    const peerLeftHandler = () => {
-      room.off("peerLeft", peerLeftHandler)
-      room.peerLeft = true
-      resolve({
-        content: [{ 
-          type: 'text', 
-          text: `Peer left room ${roomId}. The room can now be safely exited` 
-        }]
-      })
-    }
-    room.on("peerLeft", peerLeftHandler)
-  })
+    return waitForResponseOrPeerLeft(room, roomId);
+  }
 )
 
 server.tool(
   'send-message',
   'send a message to a room. this call will automatically wait for the response, or inform if the peer has left',
   { roomId: z.string(), message: z.string() },
-
-  ({ roomId, message }) => new Promise(async (resolve, reject) => {
+  async ({ roomId, message }) => {
     const room = rooms[roomId]
     if (!room) {
-      reject(`Room with id ${roomId} not found`)
-      return
+      throw new Error(`Room with id ${roomId} not found`)
     }
+    
     if (roomTranscripts[roomId]) {
-      return resolve({
+      return {
         content: [{ 
           type: 'text', 
           text: `room ${roomId} is closed. A transcript is available at rooms://room/${roomId}/transcript.json`
         }]
-      })
+      }
     }
+    
     if (room.peerLeft) {
-      return resolve({
+      return {
         content: [{ 
           type: 'text', 
           text: `the other party left the room ${roomId}. The room should be exited.`
         }]
-      })
+      }
     }
     
-    const messageHandler = (responseMessage) => {
-      if (!responseMessage.data) return
-      room.off("message", messageHandler)
-      messagesByRoom[roomId].push(responseMessage)
-      resolve({
-        content: [{ 
-          type: 'text', 
-          text: `Message sent to room ${roomId}. Response received: ${responseMessage.data}` 
-        }]
-      })
-    }
-    room.on("message", messageHandler)
-    const peerLeftHandler = () => {
-      room.off("peerLeft", peerLeftHandler)
-      room.peerLeft = true
-      resolve({
-        content: [{ 
-          type: 'text', 
-          text: `Peer left room ${roomId}. The room can now be safely exited` 
-        }]
-      })
-    }
-    room.on("peerLeft", peerLeftHandler)
+    // Send the message first
     await room.message(message)
-    messagesByRoom[roomId].push({ data: message, sent: true })
-  })
+    
+    // Then wait for response or peer left event
+    return waitForResponseOrPeerLeft(room, roomId, true, message);
+  }
 )
 
 server.tool(
