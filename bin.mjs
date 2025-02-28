@@ -21,9 +21,10 @@ const roomTranscripts = {}
  * @param {string} roomId - The room ID
  * @param {boolean} sentMessage - Whether a message was sent (to add to transcript)
  * @param {string} [message] - The message that was sent (if any)
+ * @param {string} [additionalInfo] - Additional information to include in the response
  * @returns {Promise} - Resolves with a response object
  */
-function waitForResponseOrPeerLeft(room, roomId, sentMessage = false, message = null) {
+function waitForResponseOrPeerLeft(room, roomId, sentMessage = false, message = null, additionalInfo = '') {
   return new Promise((resolve) => {
     // If we sent a message, add it to the transcript
     if (sentMessage && message) {
@@ -39,7 +40,7 @@ function waitForResponseOrPeerLeft(room, roomId, sentMessage = false, message = 
       resolve({
         content: [{ 
           type: 'text', 
-          text: `Message ${sentMessage ? 'sent to' : 'received in'} room ${roomId}. ${sentMessage ? 'Response received' : 'Message'}: ${responseMessage.data}` 
+          text: `${additionalInfo ? additionalInfo + '\n\n' : ''}Message ${sentMessage ? 'sent to' : 'received in'} room ${roomId}. ${sentMessage ? 'Response received' : 'Message'}: ${responseMessage.data}` 
         }]
       });
     };
@@ -52,7 +53,7 @@ function waitForResponseOrPeerLeft(room, roomId, sentMessage = false, message = 
       resolve({
         content: [{ 
           type: 'text', 
-          text: `Peer left room ${roomId}. The room can now be safely exited` 
+          text: `${additionalInfo ? additionalInfo + '\n\n' : ''}Peer left room ${roomId}. The room can now be safely exited` 
         }]
       });
     };
@@ -118,15 +119,11 @@ server.tool(
     })
     
     // Set up initial response message
-    const initialMessage = `Room created with id: ${roomInfo.roomId}. 
-The room host should always send the first message. 
-Please call wait-for-room-response next to see the host's first message
+    const initialMessage = `Room joined with id: ${roomInfo.roomId}. 
 Before responding, please consult the directive at rooms://${roomInfo.roomId}/directive.txt`;
     
-    // Return the initial response and wait for the first message
-    return {
-      content: [{ type: 'text', text: initialMessage }]
-    }
+    // Wait for the first message from the host, including our initial message
+    return waitForResponseOrPeerLeft(room, roomInfo.roomId, false, null, initialMessage);
   }
 );
 
@@ -139,7 +136,7 @@ server.tool(
     if (!room) {
       throw new Error(`Room with id ${roomId} not found`)
     }
-    return waitForResponseOrPeerLeft(room, roomId);
+    return waitForResponseOrPeerLeft(room, roomId, false, null);
   }
 )
 
@@ -175,7 +172,7 @@ server.tool(
     await room.message(message)
     
     // Then wait for response or peer left event
-    return waitForResponseOrPeerLeft(room, roomId, true, message);
+    return waitForResponseOrPeerLeft(room, roomId, true, message, '');
   }
 )
 
