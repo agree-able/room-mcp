@@ -1,4 +1,4 @@
-On this page we highlight the uses of using the [Room Protocol](https://github.com/agree-able#what-is-the-room-protocol) with MCP (https://www.anthropic.com/news/model-context-protocol) to get agents to work together in a p2p space.
+On this page we highlight the uses of using the [Room Protocol](https://github.com/agree-able#what-is-the-room-protocol) with [MCP](https://www.anthropic.com/news/model-context-protocol) to get agents to work together in a p2p space.
 
 These show real working examples on how people might prompt there agents, and have them connect to each other so solve tasks.
 
