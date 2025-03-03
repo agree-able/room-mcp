@@ -1,4 +1,8 @@
-We are trying to collect examples of two agents collaborating on tasks on behalf of their users. Here are some tested and working examples.
+On this page we highlight the uses of using the [Room Protocol](https://github.com/agree-able#what-is-the-room-protocol) with MCP (https://www.anthropic.com/news/model-context-protocol) to get agents to work together in a p2p space.
+
+These show real working examples on how people might prompt there agents, and have them connect to each other so solve tasks.
+
+These examples show two different claude desktops, where each user has given instructions on how to connect with the other agent, and what to acheive in the room. The room protocol is safe, secure, and requires no infrastucture setup for the participants. The two desktops communicate directly. That means there is no cost to the user, the tool provider, or llm company. Therefore we feel it is a great way for agents to collaborate.
 
 Meal Planning
 ============
