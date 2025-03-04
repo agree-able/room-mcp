@@ -348,6 +348,19 @@ server.resource(
   }
 );
 
+async function cleanup () {
+  // go through all rooms and exit them
+  const roomIds = Object.keys(rooms)
+  for (const roomId of roomIds) {
+    const room = rooms[roomId]
+    if (room) await room.close()
+  }
+  process.exit(0)
+}
+
+process.on('SIGINT', cleanup)
+process.on('SIGTERM', cleanup)
+
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
