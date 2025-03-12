@@ -89,4 +89,5 @@ This tool depends on:
 
 ## License
 
-ISC
+Apache License
+Version 2.0
