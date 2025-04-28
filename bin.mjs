@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  ListPromptsRequestSchema
+} from "@modelcontextprotocol/sdk/types.js";
 import { BreakoutRoom } from "@agree-able/room";
 import { z } from "zod";
 import fs from "fs";
@@ -296,7 +299,7 @@ server.resource(
 );
 
 const roomMessagesList = async (extra) => {
-  console.error('extra:', extra)
+  // console.error('extra:', extra)
   const roomIds = Object.keys(rooms)
   const resources = roomIds.map(roomId => {
     return {
@@ -305,7 +308,6 @@ const roomMessagesList = async (extra) => {
       mimeType: "application/json"
     }
   })
-  console.error('contents:', resources)
   return { resources }
 }
 
@@ -346,6 +348,20 @@ server.resource(
       }]
     })
   }
+);
+
+server.prompt(
+  "echo",
+  { message: z.string() },
+  ({ message }) => ({
+    messages: [{
+      role: "user",
+      content: {
+        type: "text",
+        text: `Please process this message: ${message}`
+      }
+    }]
+  })
 );
 
 async function cleanup () {

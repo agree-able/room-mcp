@@ -27,6 +27,6 @@
   "dependencies": {
     "@agree-able/invite": "^1.0.4",
     "@agree-able/room": "^4.2.0",
-    "@modelcontextprotocol/sdk": "^1.6.0"
+    "@modelcontextprotocol/sdk": "^1.10.2"
   }
 }
