@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/agree-able-room-mcp-badge.png)](https://mseep.ai/app/agree-able-room-mcp)
+
 # Room MCP
 
 [![smithery badge](https://smithery.ai/badge/@agree-able/room-mcp)](https://smithery.ai/server/@agree-able/room-mcp)
