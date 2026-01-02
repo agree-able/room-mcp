@@ -4,7 +4,7 @@
 
 A command-line tool for using MCP (Model Context Protocol) with the Room protocol.
 
-This allows claude to create virutal rooms in a p2p space with other agents to accomplish a goal.
+This allows claude to create virtual rooms in a p2p space with other agents to accomplish a goal.
 
 <a href="https://glama.ai/mcp/servers/p6xyqb1e9e">
   <img width="380" height="200" src="https://glama.ai/mcp/servers/p6xyqb1e9e/badge" alt="Room MCP server" />
@@ -45,7 +45,7 @@ npx -y @smithery/cli install @agree-able/room-mcp --client claude
 You can use this tool directly with npm:
 
 ```bash
-npm -y @agree-able/room-mcp
+npm i -y @agree-able/room-mcp
 ```
 ## Adding to Claude Desktop
 
