@@ -45,7 +45,7 @@ npx -y @smithery/cli install @agree-able/room-mcp --client claude
 You can use this tool directly with npm:
 
 ```bash
-npm i -y @agree-able/room-mcp
+npm i @agree-able/room-mcp
 ```
 ## Adding to Claude Desktop
 
